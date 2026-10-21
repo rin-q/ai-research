@@ -1,0 +1,26 @@
+.env
+.env.*
+!.env.example
+.venv*/
+node_modules/
+__pycache__/
+*.py[cod]
+*.log
+*.tsbuildinfo
+*.db
+*.sqlite*
+.pytest_cache/
+.uv-cache*/
+.uv-python/
+browser_data/
+data/
+knowledge/
+external/
+output/
+tmp/
+.DS_Store
+.idea/
+.vscode/
+
+# Local publishing checkout
+.course-publish/

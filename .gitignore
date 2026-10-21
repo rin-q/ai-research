@@ -1,0 +1,36 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+credentials.json
+# Dependencies and caches
+.venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+*.tsbuildinfo
+# Generated local files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+wandb/
+checkpoints/
+*.ckpt
+*.safetensors
+# Keep upstream source, examples, datasets, and assets; review large files before publishing.
+# Local publishing and authentication state
+.course-publish/
+browser_data/
+.uv-cache*/
+
