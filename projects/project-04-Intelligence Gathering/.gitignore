@@ -24,3 +24,7 @@ tmp/
 
 # Local publishing checkout
 .course-publish/
+
+# Machine-specific CA trust material (see .env SSL_CERT_FILE)
+certs/
+kaspersky-root.pem

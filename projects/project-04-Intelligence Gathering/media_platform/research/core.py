@@ -75,6 +75,17 @@ def arxiv_search_queries(keywords: list[str]) -> list[tuple[str, str]]:
     return [pair for pair in expanded_research_queries(keywords) if not contains_cjk(pair[1])]
 
 
+def arxiv_phrase(query: str) -> str:
+    """Quote the query so arXiv matches the phrase, not loose word conjunctions.
+
+    Unquoted `all:data poisoning` is parsed as an AND over the words "data" and
+    "poisoning", so it returned astrophysics and remote-sensing papers.  Quoting
+    returns actual data-poisoning literature.  Quotes inside the term are
+    stripped because they would terminate the phrase."""
+    cleaned = str(query or "").replace('"', " ").strip()
+    return f'all:"{cleaned}"'
+
+
 class _ResearchCrawler(AbstractCrawler):
     platform = "research"
 
@@ -155,7 +166,7 @@ class ArxivCrawler(_ResearchCrawler):
             seen_papers: set[str] = set()
             for original_keyword, query in queries:
                 source_keyword_var.set(query)
-                response = await client.get("https://export.arxiv.org/api/query", params={"search_query": f"all:{query}", "start": 0, "max_results": limit, "sortBy": "relevance", "sortOrder": "descending"})
+                response = await client.get("https://export.arxiv.org/api/query", params={"search_query": arxiv_phrase(query), "start": 0, "max_results": limit, "sortBy": "relevance", "sortOrder": "descending"})
                 response.raise_for_status()
                 entries = re.findall(r"<entry>(.*?)</entry>", response.text, flags=re.DOTALL)
                 for entry in entries[:limit]:

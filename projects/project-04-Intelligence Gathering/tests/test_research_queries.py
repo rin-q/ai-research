@@ -36,6 +36,7 @@ import media_platform.research.core as core
 from media_platform.research.core import (
     GithubCrawler,
     ArxivCrawler,
+    arxiv_phrase,
     arxiv_search_queries,
     contains_cjk,
     expanded_research_queries,
@@ -104,6 +105,26 @@ class TestArxivQueriesDropCjk:
         usable query.  ArxivCrawler.search must warn and return, not silently
         report a successful empty crawl."""
         assert arxiv_search_queries(["某个没有扩展词的中文主题"]) == []
+
+
+class TestArxivPhrase:
+    """arXiv needs an explicit phrase quote; without it a multi-word query is
+    parsed as an AND over its words ("data poisoning" pulled in astrophysics)."""
+
+    def test_wraps_phrase_in_quotes(self):
+        assert arxiv_phrase("data poisoning") == 'all:"data poisoning"'
+
+    def test_single_word(self):
+        assert arxiv_phrase("jailbreak") == 'all:"jailbreak"'
+
+    def test_strips_embedded_quotes(self):
+        out = arxiv_phrase('data "poisoning"')
+        assert out.startswith('all:"') and out.endswith('"')
+        assert '"' not in out[5:-1]
+
+    def test_empty_is_safe(self):
+        assert arxiv_phrase("") == 'all:""'
+        assert arxiv_phrase(None) == 'all:""'
 
 
 class _FakeResponse:
@@ -180,12 +201,20 @@ class TestArxivCrawlerRequest:
         await ArxivCrawler().search()
         sent = [call["params"]["search_query"] for call in recording_client.calls]
         assert sent == [
-            "all:adversarial examples",
-            "all:adversarial attack",
-            "all:RAG security",
-            "all:retrieval augmented generation security",
+            'all:"adversarial examples"',
+            'all:"adversarial attack"',
+            'all:"RAG security"',
+            'all:"retrieval augmented generation security"',
         ]
         assert not any(contains_cjk(q) for q in sent)
+
+    @pytest.mark.asyncio
+    async def test_arxiv_queries_are_phrase_quoted(self, recording_client, monkeypatch):
+        """Unquoted multi-word queries degrade to loose AND matching."""
+        monkeypatch.setattr(core.config, "KEYWORDS", "data poisoning")
+        monkeypatch.setattr(core.config, "CRAWLER_MAX_NOTES_COUNT", 5)
+        await ArxivCrawler().search()
+        assert recording_client.calls[0]["params"]["search_query"] == 'all:"data poisoning"'
 
     @pytest.mark.asyncio
     async def test_no_usable_query_makes_no_request(self, recording_client, monkeypatch):
